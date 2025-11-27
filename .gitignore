@@ -1,0 +1,66 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pdb
+
+# C extensions
+*.so
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Environment variables
+.env
+.env.*
+
+# Poetry
+.poetry/
+.cache/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Test / coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# IDE settings
+.idea/
+.vscode/
+*.iml
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Mypy / typechecking
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyright
+pyrightcache/
+
+# Docker
+**/.dockerignore
+
+# Local data / artifacts
+*.sqlite
+*.db
+
+# Cache folders
+__cache__/
+.cache/
