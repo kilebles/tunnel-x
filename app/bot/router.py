@@ -3,11 +3,9 @@
 """
 
 from aiogram import Router
-from aiogram.types import Message
+from app.bot.handlers.start import router as start_router
 
 router = Router()
 
 
-@router.message()
-async def echo(message: Message):
-    await message.answer("ok")
+router.include_router(start_router)

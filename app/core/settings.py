@@ -10,6 +10,10 @@ class Settings(BaseSettings):
     BASE_URL: str
     TELEGRAM_WEBHOOK_PATH: str = '/webhook/telegram'
     REDIS_URL: str = 'redis://redis:6379/0'
+    
+    PANEL_URL: str
+    PANEL_LOGIN: str
+    PANEL_PASSWORD: str
 
     class Config:
         env_file = '.env'
