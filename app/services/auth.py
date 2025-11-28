@@ -3,8 +3,8 @@
 """
 
 import logging
-from jwt import api_jwt
 
+from jwt import api_jwt
 from httpx import AsyncClient
 from redis.asyncio import Redis
 from datetime import datetime, timezone, timedelta

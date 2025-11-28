@@ -8,8 +8,10 @@ async def set_default_commands(bot: Bot):
     """
     
     commands = [
-        BotCommand(command='start', description='Старт'),
-        BotCommand(command='help', description='Обратиться в поддержку')
+        BotCommand(command='create', description='Создать подписку'),
+        BotCommand(command='users', description='Посмотреть всех клиентов'),
+        BotCommand(command='internals', description='Посмотреть все внутренние сквады'),
+        BotCommand(command='admin', description='Посмотреть JWT токен админа'),
     ]
     
     await bot.set_my_commands(commands)

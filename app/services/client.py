@@ -20,7 +20,11 @@ class PanelClient:
         token = await self.auth.get_token()
             
         headers = kwargs.pop('headers',{}) or {}
-        headers['Authorization']= f'Bearer {token}'
+        if config.PANEL_TOKEN:
+            headers["Authorization"] = f"Bearer {config.PANEL_TOKEN}"
+        else:
+            token = await self.auth.get_token()
+            headers['Authorization']= f'Bearer {token}'
         
         url = f'{self.base_url}{path}'
         
@@ -37,7 +41,7 @@ class PanelClient:
                 response.raise_for_status()
                 return response.json()
             except HTTPStatusError as exc:
-                if exc.response.status_code == 401:
+                if exc.response.status_code == 401 and not config.PANEL_TOKEN:
                     logger.info('Токен стух, выполняется повторный логин')
                 new_token = await self.auth.login()
                 headers['Authorization'] = f'Bearer {new_token}'

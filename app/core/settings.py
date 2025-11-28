@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     REDIS_URL: str = 'redis://redis:6379/0'
     
     PANEL_URL: str
+    PANEL_TOKEN: str | None = None
     PANEL_LOGIN: str
     PANEL_PASSWORD: str
 
