@@ -15,6 +15,12 @@ class Settings(BaseSettings):
     PANEL_TOKEN: str | None = None
     PANEL_LOGIN: str
     PANEL_PASSWORD: str
+    
+    DB_HOST: str
+    DB_PORT: str
+    DB_USER: str
+    DB_PASSWORD: str
+    DB_NAME: str
 
     class Config:
         env_file = '.env'
@@ -22,6 +28,15 @@ class Settings(BaseSettings):
     @property
     def TELEGRAM_WEBHOOK(self) -> str:
         return f"{self.BASE_URL}{self.TELEGRAM_WEBHOOK_PATH}"
+    
+    @property
+    def DB_URL(self) -> str:
+        return (
+            f"postgresql+asyncpg://"
+            f"{self.DB_USER}:{self.DB_PASSWORD}@"
+            f"{self.DB_HOST}:{self.DB_PORT}/"
+            f"{self.DB_NAME}"
+        )
     
     
 config = Settings()
