@@ -5,8 +5,4 @@ class InternalSquadsService:
         self.client = PanelClient()
 
     async def get_internal_squads(self):
-        """
-        Получает список внутренних сквадов панели.
-        """
-        
-        return await self.client.request("GET", "/api/internal-squads")
+        return await self.client.request('GET', '/api/internal-squads')

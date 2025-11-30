@@ -1,7 +1,3 @@
-"""
-Клиент панели: делает запросы с фиксированным токеном.
-"""
-
 from httpx import AsyncClient
 from app.core.settings import config
 
@@ -13,10 +9,10 @@ class PanelClient:
 
     async def request(self, method: str, path: str, **kwargs):
         headers = kwargs.pop('headers', {}) or {}
-        headers["Authorization"] = f"Bearer {self.token}"
-        headers["Content-Type"] = "application/json"
+        headers['Authorization'] = f'Bearer {self.token}'
+        headers['Content-Type'] = 'application/json'
 
-        url = f"{self.base_url}{path}"
+        url = f'{self.base_url}{path}'
 
         async with AsyncClient() as client:
             response = await client.request(

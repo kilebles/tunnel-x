@@ -2,7 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import User
-from app.core.logger import logger
+from loguru import logger
 
 
 class UserRepository:

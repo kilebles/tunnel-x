@@ -5,7 +5,7 @@ up:
 down:
 	docker compose down
 
-logs:
+log:
 	docker compose logs -f bot
 
 rebuild:

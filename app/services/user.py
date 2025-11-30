@@ -3,7 +3,7 @@ from httpx import HTTPStatusError
 from app.services.client import PanelClient
 from app.db.session import AsyncSessionLocal
 from app.repositories.user import UserRepository
-from app.core.logger import logger
+from loguru import logger
 
 
 class UserService:
@@ -114,6 +114,7 @@ class UserService:
         """
         Создает пользователя в БД.
         """
+        
         user = await repo.create(
             panel_uuid=panel_data['uuid'],
             short_uuid=panel_data['shortUuid'],
@@ -128,6 +129,7 @@ class UserService:
         """
         Основной метод: создает пользователя при необходимости.
         """
+        
         async with AsyncSessionLocal() as session:
             repo = UserRepository(session)
 

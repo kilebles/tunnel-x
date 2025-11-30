@@ -3,7 +3,7 @@ from aiogram.types import Message
 from aiogram.filters import Command
 
 from app.services.user import UserService
-from app.core.logger import logger
+from app.core.logger.setup import logger
 
 router = Router()
 
