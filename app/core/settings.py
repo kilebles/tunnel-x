@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     PANEL_LOGIN: str
     PANEL_PASSWORD: str
     
+    DEFAULT_SQUAD_ID: str = '0b93d216-44d4-41ee-9a90-831bd6c02f9a'
+    
     DB_HOST: str
     DB_PORT: str
     DB_USER: str

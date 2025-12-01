@@ -5,20 +5,10 @@ from aiogram.types import Message
 from aiogram.filters import Command
 from aiogram.types import BufferedInputFile
 
-
-from app.services.client import PanelClient
 from app.services.user import UserService
 from app.services.internal import InternalSquadsService
 
 router = Router()
-
-
-@router.message(Command('admin'))
-async def test_panel(message: Message):
-    client = PanelClient()
-    
-    token = await client.auth.login()
-    await message.answer(f'Token received: {token}')
 
 
 @router.message(Command('users'))
