@@ -1,8 +1,9 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import selectinload
 
-from app.db.models import User
+from app.db.models import User, Subscription, Wallet
 
 
 class UserAlreadyExistsError(Exception):
@@ -16,8 +17,12 @@ class UserRepository:
         self.session = session
 
     async def get_by_telegram_id(self, telegram_id: int) -> User | None:
-        """Ищет пользователя по Telegram ID."""
-        stmt = select(User).where(User.telegram_id == telegram_id)
+        """Ищет пользователя по Telegram ID с подпиской и кошельком."""
+        stmt = (
+            select(User)
+            .options(selectinload(User.subscription), selectinload(User.wallet))
+            .where(User.telegram_id == telegram_id)
+        )
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
@@ -30,18 +35,26 @@ class UserRepository:
         subscription_url: str,
         hwid_limit: int | None,
     ) -> User:
-        """Создаёт пользователя в БД."""
+        """Создаёт пользователя с подпиской и кошельком."""
         user = User(
             panel_uuid=panel_uuid,
             short_uuid=short_uuid,
             telegram_id=telegram_id,
             username=username,
             subscription_url=subscription_url,
+        )
+
+        subscription = Subscription(
+            user=user,
             hwid_limit=hwid_limit,
         )
 
+        wallet = Wallet(user=user)
+
         try:
             self.session.add(user)
+            self.session.add(subscription)
+            self.session.add(wallet)
             await self.session.flush()
             await self.session.refresh(user)
             return user

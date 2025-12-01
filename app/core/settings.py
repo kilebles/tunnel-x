@@ -11,13 +11,24 @@ class Settings(BaseSettings):
     TELEGRAM_WEBHOOK_PATH: str = '/webhook/telegram'
     REDIS_URL: str = 'redis://redis:6379/0'
     
+    # Переменные RW
     PANEL_URL: str
     PANEL_TOKEN: str | None = None
     PANEL_LOGIN: str
     PANEL_PASSWORD: str
     
-    DEFAULT_SQUAD_ID: str = '0b93d216-44d4-41ee-9a90-831bd6c02f9a'
+    # Внутренние сквады
+    INTERNAL_SQUAD_MAIN: str = '0b93d216-44d4-41ee-9a90-831bd6c02f9a'
+    INTERNAL_SQUAD_FREE: str = '22598026-ee8c-4e2f-86ce-ab502c8d387b'
     
+    # Внешние сквады
+    EXTERNAL_SQUAD_PREMIUM: str = 'fa810a74-84ce-43c7-8aa7-031300453385'
+    EXTERNAL_SQUAD_FREE: str = '5499389e-b53b-44f0-a7b5-19d6bfc55064'
+    
+    # Настройки триала
+    TRIAL_DAYS: int = 2
+    
+    # Переменные БД
     DB_HOST: str
     DB_PORT: str
     DB_USER: str

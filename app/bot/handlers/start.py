@@ -18,25 +18,37 @@ async def create_user_handler(message: Message):
     try:
         result = await service.get_or_create_user(
             username=username,
-            expire_at='2099-01-01T00:00:00.000Z',
             telegram_id=telegram_id,
             description='Стартанул бота, еще не оплачивал.',
         )
         
         if result.created:
-            logger.info(f'Создан пользователь tg_id={telegram_id}')
-            await message.answer(f"<a href='{result.user.subscription_url}'>лови хапку</a>")
+            logger.info(f'Создан пользователь с триалом tg_id={telegram_id}')
+            await message.answer(
+                f"🎉 Твой пробный премиум на 2 дня активирован!\n\n"
+                f"<a href='{result.user.subscription_url}'>Получить подписку</a>"
+            )
         elif result.synced:
             logger.info(f'Синхронизирован пользователь tg_id={telegram_id}')
-            await message.answer(f"<a href='{result.user.subscription_url}'>данные синхронизированы, лови хапку</a>")
+            await message.answer(
+                f"✅ Данные синхронизированы\n\n"
+                f"<a href='{result.user.subscription_url}'>Твоя подписка</a>"
+            )
         else:
-            logger.debug(f'Пользователь tg_id={telegram_id} уже существует')
-            await message.answer('Чел, у тебя уже есть хапка')
+            status = result.user.subscription.status
+            if status == 'TRIAL':
+                await message.answer('⏳ У тебя уже активен пробный период')
+            elif status == 'PREMIUM':
+                await message.answer('💎 У тебя уже есть премиум подписка')
+            else:
+                await message.answer('📱 У тебя уже есть подписка')
+            
+            logger.debug(f'Пользователь tg_id={telegram_id} уже существует, статус={status}')
         
     except PanelError as e:
         logger.error(f'Панель недоступна для tg_id={telegram_id}: {e}')
-        await message.answer('Панель недоступна, попробуй позже')
+        await message.answer('⚠️ Панель временно недоступна, попробуй через минуту')
         
     except Exception:
         logger.exception(f'Неожиданная ошибка для tg_id={telegram_id}')
-        await message.answer('Произошла ошибка, попробуй позже')
+        await message.answer('❌ Произошла ошибка, попробуй позже')
