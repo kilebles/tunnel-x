@@ -6,7 +6,6 @@ async def set_default_commands(bot: Bot):
     """
     Устанавливает команды с меню.
     """
-    
     commands = [
         BotCommand(command='start', description='Создать подписку'),
         BotCommand(command='users', description='Посмотреть всех клиентов'),

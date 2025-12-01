@@ -25,10 +25,7 @@ def setup_logger() -> None:
     """
     Конфигурирация логирования
     """
-
     settings = LoggerSettings()
-    print('CWD:', Path.cwd())
-    print('Writing to:', settings.log_file)
 
     Path(settings.log_file).parent.mkdir(parents=True, exist_ok=True)
 

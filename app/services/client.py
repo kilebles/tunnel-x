@@ -36,6 +36,6 @@ class PanelClient:
                 response.raise_for_status()
                 return response.json()
         except HTTPStatusError as e:
-            raise PanelError(f'{method} {path}: {e.response.status.code}')
+            raise PanelError(f'{method} {path}: {e.response.status_code}')
         except Exception as e:
             raise PanelError(f'{method} {path}: {e}')

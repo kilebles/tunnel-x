@@ -14,7 +14,6 @@ async def telegram_webhook(request: Request):
     """
     Получает обновления Telegram и передаёт их в диспетчер.
     """
-    
     payload = await request.json()
     update = types.Update(**payload)
     await dp.feed_update(bot=bot, update=update)
