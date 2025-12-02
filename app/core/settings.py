@@ -8,7 +8,6 @@ class Settings(BaseSettings):
 
     BOT_TOKEN: str
     BASE_URL: str
-    TELEGRAM_WEBHOOK_PATH: str = '/webhook/telegram'
     REDIS_URL: str = 'redis://redis:6379/0'
     
     # Переменные RW
@@ -16,6 +15,7 @@ class Settings(BaseSettings):
     PANEL_TOKEN: str | None = None
     PANEL_LOGIN: str
     PANEL_PASSWORD: str
+    WEBHOOK_SECRET: str
     
     # Внутренние сквады
     INTERNAL_SQUAD_MAIN: str = '0b93d216-44d4-41ee-9a90-831bd6c02f9a'
@@ -40,7 +40,11 @@ class Settings(BaseSettings):
 
     @property
     def TELEGRAM_WEBHOOK(self) -> str:
-        return f"{self.BASE_URL}{self.TELEGRAM_WEBHOOK_PATH}"
+        return f"{self.BASE_URL}/webhook/telegram"
+    
+    @property
+    def REMNAWAVE_WEBHOOK(self) -> str:
+        return f"{self.BASE_URL}/webhook/remnawave"
     
     @property
     def DB_URL(self) -> str:

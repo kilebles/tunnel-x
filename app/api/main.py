@@ -6,7 +6,7 @@ from app.core.logger.setup import setup_logger
 from app.core.settings import config
 from app.bot.dispatcher import bot
 from app.bot.commands import set_default_commands
-from app.api.webhook import router as webhook_router
+from app.api.telegram_webhook import router as webhook_router
 
 
 @asynccontextmanager

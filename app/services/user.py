@@ -42,6 +42,27 @@ class UserService:
                 user.subscription.hwid_count = count
                 await session.commit()
 
+    async def get_user_devices(self, user_uuid: str) -> list[dict]:
+        """Получает список устройств пользователя."""
+        data = await self.client.request('GET', f'/api/hwid/devices/{user_uuid}')
+        response = data.get('response', {})
+        return response.get('devices', [])
+
+    async def delete_user_device(self, user_uuid: str, device_id: str) -> None:
+        """Удаляет конкретное устройство."""
+        payload = {
+            'userUuid': user_uuid,
+            'hwid': device_id
+        }
+        await self.client.request('POST', '/api/hwid/devices/delete', json=payload)
+
+    async def reset_user_devices(self, user_uuid: str) -> None:
+        """Сбрасывает все устройства пользователя."""
+        devices = await self.get_user_devices(user_uuid)
+        
+        for device in devices:
+            await self.delete_user_device(user_uuid, device['hwid'])
+
     async def get_or_create_user(
         self,
         username: str,
