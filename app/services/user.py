@@ -25,6 +25,22 @@ class UserService:
         """Возвращает список пользователей из панели."""
         params = {'size': size, 'start': start}
         return await self.client.request('GET', '/api/users', params=params)
+    
+    async def get_user_by_telegram_id(self, telegram_id: int) -> User | None:
+        """Получает пользователя из БД по telegram_id."""
+        async with AsyncSessionLocal() as session:
+            repo = UserRepository(session)
+            return await repo.get_by_telegram_id(telegram_id)
+
+    async def update_hwid_count(self, telegram_id: int, count: int) -> None:
+        """Обновляет счётчик устройств."""
+        async with AsyncSessionLocal() as session:
+            repo = UserRepository(session)
+            user = await repo.get_by_telegram_id(telegram_id)
+            if user:
+                await session.refresh(user, ['subscription'])
+                user.subscription.hwid_count = count
+                await session.commit()
 
     async def get_or_create_user(
         self,
@@ -60,10 +76,12 @@ class UserService:
                         expire_at=trial_expires.isoformat(),
                         internal_squads=[config.INTERNAL_SQUAD_FREE],
                         external_squad=config.EXTERNAL_SQUAD_FREE,
+                        hwid_limit=1,
                     )
                     
                     db_user.subscription.status = 'FREE'
                     db_user.subscription.expires_at = trial_expires
+                    db_user.subscription.hwid_limit = 1
                 else:
                     # Триал не использован - даём триал
                     trial_expires = datetime.now(timezone.utc) + timedelta(days=config.TRIAL_DAYS)
@@ -75,6 +93,7 @@ class UserService:
                         expire_at=trial_expires.isoformat(),
                         internal_squads=[config.INTERNAL_SQUAD_MAIN],
                         external_squad=config.EXTERNAL_SQUAD_PREMIUM,
+                        hwid_limit=1,
                     )
                     
                     # Устанавливаем триал
@@ -83,6 +102,7 @@ class UserService:
                     db_user.subscription.trial_started_at = datetime.now(timezone.utc)
                     db_user.subscription.trial_expires_at = trial_expires
                     db_user.subscription.expires_at = trial_expires
+                    db_user.subscription.hwid_limit = 1
                 
                 # Обновляем UUID из панели
                 db_user.panel_uuid = panel_data['uuid']
@@ -100,8 +120,13 @@ class UserService:
                     telegram_id=telegram_id,
                     username=panel_user['username'],
                     subscription_url=panel_user['subscriptionUrl'],
-                    hwid_limit=panel_user.get('hwidDeviceLimit'),
+                    hwid_limit=panel_user.get('hwidDeviceLimit', 1),
                 )
+                
+                # Обновляем hwid_limit из панели
+                await session.refresh(user, ['subscription'])
+                user.subscription.hwid_limit = panel_user.get('hwidDeviceLimit', 1)
+                
                 await session.commit()
                 return UserSyncResult(user=user, synced=True)
 
@@ -115,6 +140,7 @@ class UserService:
                 expire_at=trial_expires.isoformat(),
                 internal_squads=[config.INTERNAL_SQUAD_MAIN],
                 external_squad=config.EXTERNAL_SQUAD_PREMIUM,
+                hwid_limit=1,
             )
             
             user = await repo.create(
@@ -123,7 +149,7 @@ class UserService:
                 telegram_id=telegram_id,
                 username=username,
                 subscription_url=panel_data['subscriptionUrl'],
-                hwid_limit=panel_data.get('hwidDeviceLimit'),
+                hwid_limit=1,
             )
             
             # Загружаем связанные объекты
@@ -135,6 +161,7 @@ class UserService:
             user.subscription.trial_started_at = datetime.now(timezone.utc)
             user.subscription.trial_expires_at = trial_expires
             user.subscription.expires_at = trial_expires
+            user.subscription.hwid_limit = 1
             
             await session.commit()
             return UserSyncResult(user=user, created=True)
@@ -161,6 +188,7 @@ class UserService:
         expire_at: str,
         internal_squads: list[str],
         external_squad: str,
+        hwid_limit: int,
     ) -> dict:
         """Создает пользователя в панели."""
         payload = {
@@ -170,6 +198,7 @@ class UserService:
             'activeInternalSquads': internal_squads,
             'externalSquadUuid': external_squad,
             'description': description,
+            'hwidDeviceLimit': hwid_limit,
         }
 
         data = await self.client.request('POST', '/api/users', json=payload)
