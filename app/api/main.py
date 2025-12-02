@@ -6,7 +6,9 @@ from app.core.logger.setup import setup_logger
 from app.core.settings import config
 from app.bot.dispatcher import bot
 from app.bot.commands import set_default_commands
-from app.api.telegram_webhook import router as webhook_router
+from app.api.telegram_webhook import router as telegram_webhook_router
+from app.api.remnawave_webhook import router as remnawave_webhook_router
+
 
 
 @asynccontextmanager
@@ -30,4 +32,5 @@ async def lifespan(app: FastAPI):
 setup_logger()
 
 app = FastAPI(lifespan=lifespan)
-app.include_router(webhook_router)
+app.include_router(telegram_webhook_router)
+app.include_router(remnawave_webhook_router)

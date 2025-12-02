@@ -2,7 +2,7 @@ from aiogram import Router
 from aiogram.types import Message
 from aiogram.filters import Command
 
-from app.services.user import UserService
+from app.services.device import DeviceService
 from app.services.client import PanelError
 from loguru import logger
 
@@ -12,21 +12,13 @@ router = Router()
 @router.message(Command('devices'))
 async def show_devices_handler(message: Message):
     """Показывает список подключенных устройств."""
-    service = UserService()
+    service = DeviceService()
     telegram_id = message.from_user.id
 
     try:
-        user = await service.get_user_by_telegram_id(telegram_id)
+        devices, limit = await service.get_devices(telegram_id)
         
-        if not user:
-            await message.answer('❌ Пользователь не найден')
-            return
-
-        devices = await service.get_user_devices(user.panel_uuid)
-        await service.update_hwid_count(telegram_id, len(devices))
-
-        limit = user.subscription.hwid_limit or '∞'
-        text = f"📱 <b>Мои устройства: {len(devices)}/{limit}</b>\n\n"
+        text = f"📱 <b>Мои устройства: {len(devices)}/{limit or '∞'}</b>\n\n"
 
         if not devices:
             text += "Устройства не подключены\n\n"
@@ -63,7 +55,7 @@ async def show_devices_handler(message: Message):
 @router.message(Command('delete'))
 async def delete_device_handler(message: Message):
     """Удаляет конкретное устройство по ID."""
-    service = UserService()
+    service = DeviceService()
     telegram_id = message.from_user.id
 
     args = message.text.split(maxsplit=1)
@@ -75,26 +67,20 @@ async def delete_device_handler(message: Message):
         )
         return
 
-    device_id = args[1].strip()
+    hwid = args[1].strip()
 
     try:
-        user = await service.get_user_by_telegram_id(telegram_id)
-        
-        if not user:
-            await message.answer('❌ Пользователь не найден')
-            return
-
-        await service.delete_user_device(user.panel_uuid, device_id)
-
-        devices = await service.get_user_devices(user.panel_uuid)
-        await service.update_hwid_count(telegram_id, len(devices))
+        remaining, limit = await service.delete_device(telegram_id, hwid)
 
         await message.answer(
             f'✅ Устройство удалено\n\n'
-            f'Осталось устройств: {len(devices)}/{user.subscription.hwid_limit or "∞"}'
+            f'Осталось устройств: {remaining}/{limit or "∞"}'
         )
-        logger.info(f'Пользователь tg_id={telegram_id} удалил устройство {device_id}')
+        logger.info(f'Пользователь tg_id={telegram_id} удалил устройство {hwid}')
 
+    except ValueError as e:
+        await message.answer(f'❌ {e}')
+    
     except PanelError as e:
         logger.error(f'Ошибка удаления устройства для tg_id={telegram_id}: {e}')
         await message.answer('⚠️ Не удалось удалить устройство. Проверь ID')
@@ -107,22 +93,17 @@ async def delete_device_handler(message: Message):
 @router.message(Command('delete_all'))
 async def delete_all_devices_handler(message: Message):
     """Удаляет все устройства пользователя."""
-    service = UserService()
+    service = DeviceService()
     telegram_id = message.from_user.id
 
     try:
-        user = await service.get_user_by_telegram_id(telegram_id)
-        
-        if not user:
-            await message.answer('❌ Пользователь не найден')
-            return
-
-        await service.reset_user_devices(user.panel_uuid)
-        await service.update_hwid_count(telegram_id, 0)
-
+        await service.reset_devices(telegram_id)
         await message.answer('✅ Все устройства удалены')
         logger.info(f'Пользователь tg_id={telegram_id} удалил все устройства')
 
+    except ValueError as e:
+        await message.answer(f'❌ {e}')
+    
     except PanelError as e:
         logger.error(f'Ошибка сброса устройств для tg_id={telegram_id}: {e}')
         await message.answer('⚠️ Не удалось удалить устройства')

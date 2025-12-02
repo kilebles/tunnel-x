@@ -6,13 +6,14 @@ from fastapi import APIRouter, Request, HTTPException
 from loguru import logger
 
 from app.core.settings import config
-from app.services.remnawave_webhook import WebhookService
+from app.services.remnawave_webhook import RemnavaveWebhookHandler
 
 router = APIRouter()
 
 
 def validate_webhook(body: bytes, signature: str) -> bool:
     """Проверяет подпись вебхука."""
+    
     computed_signature = hmac.new(
         config.WEBHOOK_SECRET.encode('utf-8'),
         body,
@@ -49,7 +50,7 @@ async def remnawave_webhook(request: Request):
     
     logger.info(f'Получен вебхук: event={event}, timestamp={timestamp}')
 
-    service = WebhookService()
-    await service.handle_event(event, data)
-    
+    handler = RemnavaveWebhookHandler()
+    await handler.handle_event(event, data)
+
     return {"ok": True}
