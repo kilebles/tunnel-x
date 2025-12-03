@@ -6,30 +6,20 @@ from app.bot.keyboards.callback_data import MainMenuCallback
 
 
 def build_main_menu(user: User) -> InlineKeyboardMarkup:
-    """
-    Строит главное меню с динамическими кнопками.
-    
-    Кнопки:
-    - Подключиться (URL на subscription_url)
-    - Устройства (если hwid_count > 0)
-    - Продлить/Перейти на премиум (колбэк, зависит от статуса)
-    """
+    """Строит главное меню с динамическими кнопками."""
     builder = InlineKeyboardBuilder()
     
-    # 1. Кнопка "Подключиться" (URL из БД)
     builder.button(
         text="🔗 Подключиться",
         web_app=WebAppInfo(url=user.subscription_url)
     )
     
-    # 2. Кнопка "Устройства" (только если есть устройства)
     if user.subscription.hwid_count > 0:
         builder.button(
             text=f"📱 Устройства ({user.subscription.hwid_count}/{user.subscription.hwid_limit or '∞'})",
             callback_data=MainMenuCallback(action='devices').pack()
         )
     
-    # 3. Кнопка подписки (колбэк для открытия меню тарифов)
     status = user.subscription.status
     
     if status == 'FREE':
@@ -39,12 +29,12 @@ def build_main_menu(user: User) -> InlineKeyboardMarkup:
         )
     elif status == 'TRIAL':
         builder.button(
-            text="🎁 Остаться на премиум",
+            text="🌏 Остаться на премиум",
             callback_data=MainMenuCallback(action='upgrade').pack()
         )
     elif status == 'PREMIUM':
         builder.button(
-            text="🔄 Продлить подписку",
+            text="🔄 Продлить тариф",
             callback_data=MainMenuCallback(action='upgrade').pack()
         )
     
@@ -54,9 +44,18 @@ def build_main_menu(user: User) -> InlineKeyboardMarkup:
 
 def get_main_menu_text(user: User) -> str:
     """Генерирует текст для главного меню."""
+    from datetime import datetime, timezone
+    
     status = user.subscription.status
     expires = user.subscription.expires_at
+    username = user.username or f"user_{user.telegram_id}"
+    balance = float(user.wallet.balance)
     
+    # Заголовок
+    text = f"<b>@{username}</b>\n"
+    text += f"<code>ID: {user.telegram_id}</code>\n\n"
+    
+    # Статус
     status_emoji = {
         'FREE': '🆓',
         'TRIAL': '⏳',
@@ -65,18 +64,18 @@ def get_main_menu_text(user: User) -> str:
     
     status_name = {
         'FREE': 'Бесплатный',
-        'TRIAL': 'Пробный премиум',
+        'TRIAL': 'Премиум',
         'PREMIUM': 'Премиум'
     }
     
-    text = f"<b>Главное меню</b>\n\n"
-    text += f"{status_emoji.get(status, '📱')} Статус: <b>{status_name.get(status, status)}</b>\n"
+    text += f"{status_emoji.get(status, '📱')} Тариф: <b>{status_name.get(status, status)}</b>\n"
     
-    # Показываем срок только для TRIAL и PREMIUM
+    # Баланс
+    text += f"💰 Баланс: <b>{balance:.2f}₽</b>\n"
+    
+    # Время подписки (только для TRIAL и PREMIUM)
     if status in ('TRIAL', 'PREMIUM') and expires:
-        from datetime import datetime, timezone
         time_left = expires - datetime.now(timezone.utc)
-        
         days = time_left.days
         hours = time_left.seconds // 3600
         
@@ -87,5 +86,14 @@ def get_main_menu_text(user: User) -> str:
         else:
             minutes = (time_left.seconds % 3600) // 60
             text += f"⏰ Осталось: <b>{minutes} мин.</b>\n"
+    
+    text += "\n"
+    
+    if status == 'FREE':
+        text += "<blockquote><i>Бесплатный тариф имеет ограниченную скорость, количество устройств и доступен только один сервер </i></blockquote>"
+    elif status == 'TRIAL':
+        text += "<blockquote><i>Оставайтесь на премиум тарифе, чтобы скорость и трафик были не ограничены, а доступных локаций было множество </i></blockquote>"
+    elif status == 'PREMIUM':
+        text += "<blockquote><i>Вы под защитой, спасибо что выбираете нас </i></blockquote>"
     
     return text
