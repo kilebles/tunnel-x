@@ -1,4 +1,4 @@
-from aiogram.types import InlineKeyboardMarkup
+from aiogram.types import InlineKeyboardMarkup, WebAppInfo
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.db.models.user import User
@@ -19,7 +19,7 @@ def build_main_menu(user: User) -> InlineKeyboardMarkup:
     # 1. Кнопка "Подключиться" (URL из БД)
     builder.button(
         text="🔗 Подключиться",
-        url=user.subscription_url
+        web_app=WebAppInfo(url=user.subscription_url)
     )
     
     # 2. Кнопка "Устройства" (только если есть устройства)
@@ -72,15 +72,20 @@ def get_main_menu_text(user: User) -> str:
     text = f"<b>Главное меню</b>\n\n"
     text += f"{status_emoji.get(status, '📱')} Статус: <b>{status_name.get(status, status)}</b>\n"
     
-    if expires:
+    # Показываем срок только для TRIAL и PREMIUM
+    if status in ('TRIAL', 'PREMIUM') and expires:
         from datetime import datetime, timezone
-        days_left = (expires - datetime.now(timezone.utc)).days
+        time_left = expires - datetime.now(timezone.utc)
         
-        if days_left > 0:
-            text += f"⏰ Осталось: <b>{days_left} дн.</b>\n"
-        elif status != 'FREE':
-            text += f"⚠️ Подписка истекла\n"
-    
-    text += f"📱 Устройств: <b>{user.subscription.hwid_count}/{user.subscription.hwid_limit or '∞'}</b>\n"
+        days = time_left.days
+        hours = time_left.seconds // 3600
+        
+        if days > 0:
+            text += f"⏰ Осталось: <b>{days} дн. {hours} ч.</b>\n"
+        elif hours > 0:
+            text += f"⏰ Осталось: <b>{hours} ч.</b>\n"
+        else:
+            minutes = (time_left.seconds % 3600) // 60
+            text += f"⏰ Осталось: <b>{minutes} мин.</b>\n"
     
     return text
