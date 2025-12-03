@@ -15,6 +15,7 @@ class User(Base):
     telegram_id: Mapped[int] = mapped_column(BigInteger, unique=True, nullable=False)
     username: Mapped[str | None] = mapped_column(String(64))
     subscription_url: Mapped[str] = mapped_column(String(255), nullable=False)
+    last_message_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

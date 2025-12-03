@@ -3,6 +3,7 @@ from aiogram.types import Message
 from aiogram.filters import Command
 
 from app.services.user import UserService
+from app.services.message import MessageService
 from app.services.client import PanelError
 from app.bot.keyboards.main_menu import build_main_menu, get_main_menu_text
 from loguru import logger
@@ -14,10 +15,11 @@ router = Router()
 async def start_handler(message: Message):
     """
     Обрабатывает /start - создаёт/синхронизирует юзера,
-    показывает главное меню.
+    показывает главное меню через систему единого сообщения.
     """
     
     service = UserService()
+    message_service = MessageService()
     username = message.from_user.username or f'user_{message.from_user.id}'
     telegram_id = message.from_user.id
 
@@ -51,7 +53,14 @@ async def start_handler(message: Message):
             text = get_main_menu_text(user)
         
         keyboard = build_main_menu(user)
-        await message.answer(text, reply_markup=keyboard)
+        
+        # Используем систему единого сообщения (bot берётся из message.bot)
+        await message_service.update_or_send_menu(
+            bot=message.bot,  # <-- Вот исправление!
+            telegram_id=telegram_id,
+            text=text,
+            keyboard=keyboard
+        )
         
     except PanelError as e:
         logger.error(f'Панель недоступна для tg_id={telegram_id}: {e}')
