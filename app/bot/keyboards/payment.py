@@ -2,21 +2,16 @@ from aiogram.types import InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.bot.keyboards.callback_data import PaymentCallback, MainMenuCallback
+from app.services.currency import CurrencyService
 
 
-def convert_rub_to_usd(rub: int) -> float:
-    """Конвертирует рубли в доллары по текущему курсу."""
-    # TODO: Можно добавить API для получения актуального курса
-    # Пока используем примерный курс 1 USD = 95 RUB
-    USD_RATE = 95
-    return round(rub / USD_RATE, 2)
-
-
-def build_payment_menu(price_rub: int) -> InlineKeyboardMarkup:
+async def build_payment_menu(price_rub: int) -> InlineKeyboardMarkup:
     """Строит меню выбора способа оплаты."""
     builder = InlineKeyboardBuilder()
     
-    price_usd = convert_rub_to_usd(price_rub)
+    # Получаем актуальный курс
+    currency_service = CurrencyService()
+    price_usd = await currency_service.convert_rub_to_usd(price_rub)
     
     builder.button(
         text=f"💳 Карта ({price_rub}₽)",
@@ -38,7 +33,7 @@ def build_payment_menu(price_rub: int) -> InlineKeyboardMarkup:
     return builder.as_markup()
 
 
-def get_payment_menu_text(devices: int, days: int, price: int) -> str:
+async def get_payment_menu_text(devices: int, days: int, price: int) -> str:
     """Генерирует текст для меню оплаты."""
     if days == 30:
         period = "1 месяц"
@@ -51,7 +46,9 @@ def get_payment_menu_text(devices: int, days: int, price: int) -> str:
     else:
         period = f"{days} дней"
     
-    price_usd = convert_rub_to_usd(price)
+    # Получаем актуальный курс
+    currency_service = CurrencyService()
+    price_usd = await currency_service.convert_rub_to_usd(price)
     
     text = f"Тариф: <b>{devices} устройств</b> на <b>{period}</b>\n"
     text += f"К оплате: <b>{price}₽</b> ≈${price_usd}\n\n"

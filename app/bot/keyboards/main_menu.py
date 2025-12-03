@@ -39,7 +39,7 @@ def build_main_menu(user: User) -> InlineKeyboardMarkup:
         )
     elif status == 'TRIAL':
         builder.button(
-            text="🎁 Купить премиум со скидкой",
+            text="🎁 Остаться на премиум",
             callback_data=MainMenuCallback(action='upgrade').pack()
         )
     elif status == 'PREMIUM':

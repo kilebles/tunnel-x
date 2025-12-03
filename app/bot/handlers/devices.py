@@ -68,7 +68,6 @@ async def device_info(callback: CallbackQuery, callback_data: DeviceCallback):
             f"💻 Платформа: {platform}\n"
             f"📟 ОС: {os_version}\n"
             f"📅 Подключено: {created_at}\n"
-            f"🔑 ID: {hwid[:16]}..."
         )
         
         await callback.answer(info_text, show_alert=True)
@@ -81,6 +80,7 @@ async def device_info(callback: CallbackQuery, callback_data: DeviceCallback):
 @router.callback_query(DeviceCallback.filter(F.action == 'delete'))
 async def delete_device_callback(callback: CallbackQuery, callback_data: DeviceCallback):
     """Удаляет устройство по hwid."""
+    
     await callback.answer()
     
     device_service = DeviceService()
