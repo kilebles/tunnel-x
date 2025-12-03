@@ -15,5 +15,10 @@ class DeviceCallback(CallbackData, prefix="device"):
 class SubscriptionCallback(CallbackData, prefix="sub"):
     """Колбэки подписки."""
     action: str  # 'select_days', 'select_devices', 'pay', 'back'
-    devices: int = 2  # Текущий выбор устройств (по умолчанию 2)
-    days: int = 30    # Текущий выбор дней (по умолчанию 30)
+    devices: int = 2  # По умолчанию
+    days: int = 30  # По умолчанию
+
+
+class PaymentCallback(CallbackData, prefix="payment"):
+    """Колбэки оплаты."""
+    method: str  # 'card', 'crypto', 'back'
