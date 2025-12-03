@@ -47,18 +47,23 @@ class SubscriptionService:
         duration_days: int,
         hwid_limit: int
     ) -> None:
-        """Активирует премиум подписку."""
+        """Активирует или продлевает премиум подписку."""
         async with AsyncSessionLocal() as session:
             repo = UserRepository(session)
             user = await repo.get_by_telegram_id(telegram_id)
             
             if not user:
-                logger.warning(f'Пользователь tg_id={telegram_id} не найден')
-                return
+                raise ValueError(f'Пользователь tg_id={telegram_id} не найден')
             
             await session.refresh(user, ['subscription'])
             
-            expires = datetime.now(timezone.utc) + timedelta(days=duration_days)
+            if user.subscription.status in ('TRIAL', 'PREMIUM') and user.subscription.expires_at:
+                if user.subscription.expires_at > datetime.now(timezone.utc):
+                    expires = user.subscription.expires_at + timedelta(days=duration_days)
+                else:
+                    expires = datetime.now(timezone.utc) + timedelta(days=duration_days)
+            else:
+                expires = datetime.now(timezone.utc) + timedelta(days=duration_days)
             
             user.subscription.status = 'PREMIUM'
             user.subscription.expires_at = expires
@@ -73,7 +78,7 @@ class SubscriptionService:
             )
             
             await session.commit()
-            logger.info(f'Активирован PREMIUM для tg_id={telegram_id} на {duration_days} дней')
+            logger.info(f'Активирован/продлён PREMIUM для tg_id={telegram_id} на {duration_days} дней, истекает {expires}')
     
     async def _update_user_in_panel(
         self,

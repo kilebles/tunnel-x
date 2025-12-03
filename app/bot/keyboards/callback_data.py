@@ -21,5 +21,5 @@ class SubscriptionCallback(CallbackData, prefix="sub"):
 
 class PaymentCallback(CallbackData, prefix="payment"):
     """Колбэки оплаты."""
-    method: str  # 'card', 'crypto', 'back'
+    method: str  # 'balance', 'card', 'crypto', 'back'
     amount_rub: int = 0  # Сумма в рублях
