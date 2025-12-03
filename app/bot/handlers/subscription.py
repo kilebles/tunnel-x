@@ -3,7 +3,7 @@ from aiogram.types import CallbackQuery
 from aiogram.fsm.context import FSMContext
 
 from app.bot.keyboards.subscription import build_subscription_menu, get_subscription_menu_text, calculate_price
-from app.bot.keyboards.payment import build_payment_menu, get_payment_menu_text
+from app.bot.keyboards.payment import build_payment_menu, get_payment_menu_text, convert_rub_to_usd
 from app.bot.keyboards.callback_data import MainMenuCallback, SubscriptionCallback, PaymentCallback
 from app.bot.states.subscription import SubscriptionStates
 from loguru import logger
@@ -17,7 +17,6 @@ async def show_subscription_menu(callback: CallbackQuery, callback_data: MainMen
     await callback.answer()
     
     try:
-        # По умолчанию: 2 устройства, 30 дней
         text = get_subscription_menu_text(devices=2, days=30)
         keyboard = build_subscription_menu(devices=2, days=30)
         
@@ -71,7 +70,6 @@ async def proceed_to_payment(
     await callback.answer()
     
     try:
-        # Сохраняем выбор в FSM
         price, _ = calculate_price(callback_data.devices, callback_data.days)
         
         await state.update_data(
@@ -82,7 +80,7 @@ async def proceed_to_payment(
         await state.set_state(SubscriptionStates.selecting_payment)
         
         text = get_payment_menu_text(callback_data.devices, callback_data.days, price)
-        keyboard = build_payment_menu()
+        keyboard = build_payment_menu(price)  # Передаём цену в рублях
         
         await callback.message.edit_text(text, reply_markup=keyboard)
         logger.info(f'Переход к оплате для tg_id={callback.from_user.id}')
@@ -96,19 +94,22 @@ async def proceed_to_payment(
 async def pay_with_card(callback: CallbackQuery, state: FSMContext):
     """Оплата картой (заглушка)."""
     data = await state.get_data()
+    amount_rub = callback.amount_rub or data['price']
     
     await callback.answer(
-        f"Оплата картой: {data['devices']} устройств на {data['days']} дней = {data['price']}₽ (в разработке)",
+        f"Оплата картой: {data['devices']} устройств на {data['days']} дней = {amount_rub}₽ (в разработке)",
         show_alert=True
     )
 
 
 @router.callback_query(PaymentCallback.filter(F.method == 'crypto'))
-async def pay_with_crypto(callback: CallbackQuery, state: FSMContext):
+async def pay_with_crypto(callback: CallbackQuery, state: FSMContext, callback_data: PaymentCallback):
     """Оплата криптой (заглушка)."""
     data = await state.get_data()
+    amount_rub = callback_data.amount_rub or data['price']
+    amount_usd = convert_rub_to_usd(amount_rub)
     
     await callback.answer(
-        f"Оплата криптой: {data['devices']} устройств на {data['days']} дней = {data['price']}₽ (в разработке)",
+        f"Оплата криптой: {data['devices']} устройств на {data['days']} дней = ${amount_usd} (в разработке)",
         show_alert=True
     )
