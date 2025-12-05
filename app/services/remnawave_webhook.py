@@ -135,6 +135,3 @@ class RemnavaveWebhookHandler:
             await session.commit()
             
             logger.info(f'Устройство удалено для tg_id={telegram_id}, осталось {user.subscription.hwid_count}')
-        
-        # Обновляем меню
-        await self._update_user_menu(telegram_id)

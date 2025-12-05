@@ -63,7 +63,7 @@ async def get_payment_menu_text(devices: int, days: int, price: int, user_balanc
     
     # Показываем баланс если есть
     if user_balance > 0:
-        text += f"Твой баланс: <b>{user_balance:.2f}₽</b>\n"
+        text += f"Баланс Tunnel-X: <b>{user_balance:.2f}₽</b>\n"
     
     text += "\n"
     text += f"<blockquote><i>Выбери удобный способ оплаты</i></blockquote>"
