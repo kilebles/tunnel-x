@@ -40,6 +40,24 @@ async def build_payment_menu(price_rub: int, user_balance: float) -> InlineKeybo
     return builder.as_markup()
 
 
+def build_card_payment_keyboard(confirmation_url: str) -> InlineKeyboardMarkup:
+    """Строит клавиатуру для оплаты картой через ЮKassa."""
+    builder = InlineKeyboardBuilder()
+    
+    builder.button(
+        text="💳 Оплатить",
+        url=confirmation_url
+    )
+    builder.button(
+        text="◀️ Отмена",
+        callback_data=MainMenuCallback(action='back').pack()
+    )
+    
+    builder.adjust(1)
+    
+    return builder.as_markup()
+
+
 async def get_payment_menu_text(devices: int, days: int, price: int, user_balance: float) -> str:
     """Генерирует текст для меню оплаты."""
     if days == 30:
@@ -69,3 +87,25 @@ async def get_payment_menu_text(devices: int, days: int, price: int, user_balanc
     text += f"<blockquote><i>Выбери удобный способ оплаты</i></blockquote>"
     
     return text
+
+
+def get_card_payment_text(devices: int, days: int, amount: int) -> str:
+    """Генерирует текст для оплаты картой."""
+    if days == 30:
+        period = "1 месяц"
+    elif days == 90:
+        period = "3 месяца"
+    elif days == 180:
+        period = "6 месяцев"
+    elif days == 360:
+        period = "1 год"
+    else:
+        period = f"{days} дней"
+    
+    return (
+        f"<b>💳 Оплата картой</b>\n\n"
+        f"Тариф: <b>{devices} устройств</b> на <b>{period}</b>\n"
+        f"Сумма: <b>{amount}₽</b>\n\n"
+        f"Нажми кнопку ниже для оплаты.\n"
+        f"После успешной оплаты премиум активируется автоматически."
+    )
