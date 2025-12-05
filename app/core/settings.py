@@ -37,6 +37,11 @@ class Settings(BaseSettings):
     DB_USER: str
     DB_PASSWORD: str
     DB_NAME: str
+    
+    # Админ панель
+    ADMIN_USERNAME: str
+    ADMIN_PASSWORD: str
+    SECRET_KEY: str
 
     class Config:
         env_file = '.env'

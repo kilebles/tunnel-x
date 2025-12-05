@@ -223,6 +223,11 @@ async def pay_with_card(callback: CallbackQuery, state: FSMContext, callback_dat
         devices = data['devices']
         days = data['days']
         
+        logger.info(f'Начало создания платежа ЮKassa для tg_id={telegram_id}, amount={amount_rub}')
+        
+        # Показываем индикатор загрузки
+        await safe_answer(callback, '⏳ Создаём платёж...')
+        
         payment_service = PaymentService()
         payment_result = await payment_service.create_card_payment(
             telegram_id=telegram_id,
@@ -230,6 +235,8 @@ async def pay_with_card(callback: CallbackQuery, state: FSMContext, callback_dat
             devices=devices,
             days=days
         )
+        
+        logger.info(f'Платёж создан успешно: payment_id={payment_result["payment_id"]}')
         
         await state.update_data(payment_id=payment_result['payment_id'])
         
@@ -242,16 +249,35 @@ async def pay_with_card(callback: CallbackQuery, state: FSMContext, callback_dat
             text=text,
             keyboard=keyboard
         )
-        await safe_answer(callback)
         
         logger.info(
             f'Создан платёж для tg_id={telegram_id}: '
             f'payment_id={payment_result["payment_id"]}, amount={amount_rub}'
         )
         
-    except Exception:
-        logger.exception(f'Ошибка создания платежа для tg_id={telegram_id}')
-        await safe_answer(callback, '❌ Произошла ошибка при создании платежа', show_alert=True)
+    except TimeoutError:
+        logger.error(f'Таймаут при создании платежа для tg_id={telegram_id}')
+        await safe_answer(
+            callback, 
+            '❌ Превышено время ожидания.\n\nПопробуй ещё раз через минуту.', 
+            show_alert=True
+        )
+        
+    except Exception as e:
+        logger.exception(f'Ошибка создания платежа для tg_id={telegram_id}: {e}')
+        error_msg = str(e)
+        if 'SSL' in error_msg or 'connection' in error_msg.lower():
+            await safe_answer(
+                callback, 
+                '❌ Ошибка соединения с платёжной системой.\n\nПопробуй ещё раз через минуту.', 
+                show_alert=True
+            )
+        else:
+            await safe_answer(
+                callback, 
+                f'❌ Не удалось создать платёж.\n\nОшибка: {error_msg[:80]}', 
+                show_alert=True
+            )
 
 
 @router.callback_query(PaymentCallback.filter(F.method == 'crypto'))
