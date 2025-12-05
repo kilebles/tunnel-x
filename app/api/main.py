@@ -8,7 +8,7 @@ from app.bot.dispatcher import bot
 from app.bot.commands import set_default_commands
 from app.api.telegram_webhook import router as telegram_webhook_router
 from app.api.remnawave_webhook import router as remnawave_webhook_router
-
+from app.api.yookassa_webhook import router as yookassa_webhook_router
 
 
 @asynccontextmanager
@@ -34,3 +34,4 @@ setup_logger()
 app = FastAPI(lifespan=lifespan)
 app.include_router(telegram_webhook_router)
 app.include_router(remnawave_webhook_router)
+app.include_router(yookassa_webhook_router)

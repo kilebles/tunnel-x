@@ -1,6 +1,7 @@
 from aiogram import Router, F
 from aiogram.types import CallbackQuery
 from aiogram.fsm.context import FSMContext
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.services.user import UserService
 from app.services.balance import BalanceService
@@ -8,9 +9,9 @@ from app.services.payment import PaymentService
 from app.bot.keyboards.subscription import build_subscription_menu, get_subscription_menu_text, calculate_price
 from app.bot.keyboards.payment import build_payment_menu, get_payment_menu_text
 from app.bot.keyboards.main_menu import build_main_menu, get_main_menu_text
-from app.services.currency import CurrencyService
 from app.bot.keyboards.callback_data import MainMenuCallback, SubscriptionCallback, PaymentCallback
 from app.bot.states.subscription import SubscriptionStates
+from app.services.currency import CurrencyService
 from loguru import logger
 
 router = Router()
@@ -159,20 +160,71 @@ async def pay_with_balance(callback: CallbackQuery, state: FSMContext, callback_
 
 @router.callback_query(PaymentCallback.filter(F.method == 'card'))
 async def pay_with_card(callback: CallbackQuery, state: FSMContext, callback_data: PaymentCallback):
-    """Оплата картой (заглушка)."""
-    data = await state.get_data()
-    amount_rub = callback_data.amount_rub or data['price']
+    """Оплата картой через ЮKassa."""
+    telegram_id = callback.from_user.id
     
-    await callback.answer(
-        f"Оплата картой: {data['devices']} устройств на {data['days']} дней = {amount_rub}₽ (в разработке)",
-        show_alert=True
-    )
+    try:
+        data = await state.get_data()
+        amount_rub = callback_data.amount_rub or data['price']
+        devices = data['devices']
+        days = data['days']
+        
+        payment_service = PaymentService()
+        payment_result = await payment_service.create_card_payment(
+            telegram_id=telegram_id,
+            amount=amount_rub,
+            devices=devices,
+            days=days
+        )
+        
+        await state.update_data(payment_id=payment_result['payment_id'])
+        
+        builder = InlineKeyboardBuilder()
+        builder.button(
+            text="💳 Оплатить",
+            url=payment_result['confirmation_url']
+        )
+        builder.button(
+            text="◀️ Отмена",
+            callback_data=MainMenuCallback(action='back').pack()
+        )
+        builder.adjust(1)
+        
+        if days == 30:
+            period = "1 месяц"
+        elif days == 90:
+            period = "3 месяца"
+        elif days == 180:
+            period = "6 месяцев"
+        elif days == 360:
+            period = "1 год"
+        else:
+            period = f"{days} дней"
+        
+        text = (
+            f"<b>💳 Оплата картой</b>\n\n"
+            f"Тариф: <b>{devices} устройств</b> на <b>{period}</b>\n"
+            f"Сумма: <b>{amount_rub}₽</b>\n\n"
+            f"Нажми кнопку ниже для оплаты.\n"
+            f"После успешной оплаты премиум активируется автоматически."
+        )
+        
+        await callback.message.edit_text(text, reply_markup=builder.as_markup())
+        await callback.answer()
+        
+        logger.info(
+            f'Создан платёж для tg_id={telegram_id}: '
+            f'payment_id={payment_result["payment_id"]}, amount={amount_rub}'
+        )
+        
+    except Exception:
+        logger.exception(f'Ошибка создания платежа для tg_id={telegram_id}')
+        await callback.answer('❌ Произошла ошибка при создании платежа', show_alert=True)
 
 
 @router.callback_query(PaymentCallback.filter(F.method == 'crypto'))
 async def pay_with_crypto(callback: CallbackQuery, state: FSMContext, callback_data: PaymentCallback):
     """Оплата криптой (заглушка)."""
-    
     data = await state.get_data()
     amount_rub = callback_data.amount_rub or data['price']
     

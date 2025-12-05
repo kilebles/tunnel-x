@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     PANEL_PASSWORD: str
     WEBHOOK_SECRET: str
     
+    YOOKASSA_ACCOUNT_ID: str
+    YOOKASSA_SECRET_KEY: str
+    
     # Внутренние сквады
     INTERNAL_SQUAD_MAIN: str = '0b93d216-44d4-41ee-9a90-831bd6c02f9a'
     INTERNAL_SQUAD_FREE: str = '22598026-ee8c-4e2f-86ce-ab502c8d387b'
@@ -45,6 +48,10 @@ class Settings(BaseSettings):
     @property
     def REMNAWAVE_WEBHOOK(self) -> str:
         return f"{self.BASE_URL}/webhook/remnawave"
+    
+    @property
+    def YOOKASSA_WEBHOOK(self) -> str:
+        return f"{self.BASE_URL}/webhook/yookassa"
     
     @property
     def DB_URL(self) -> str:
