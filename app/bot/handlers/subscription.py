@@ -41,8 +41,8 @@ async def show_subscription_menu(callback: CallbackQuery, callback_data: MainMen
     telegram_id = callback.from_user.id
     
     try:
-        text = get_subscription_menu_text(devices=2, days=30)
-        keyboard = build_subscription_menu(devices=2, days=30)
+        text = await get_subscription_menu_text(devices=2, days=30)
+        keyboard = await build_subscription_menu(devices=2, days=30)
         
         await message_service.update_or_send_menu(
             bot=callback.bot,
@@ -65,8 +65,9 @@ async def select_days(callback: CallbackQuery, callback_data: SubscriptionCallba
     telegram_id = callback.from_user.id
     
     try:
-        text = get_subscription_menu_text(devices=callback_data.devices, days=callback_data.days)
-        keyboard = build_subscription_menu(devices=callback_data.devices, days=callback_data.days)
+        text = await get_subscription_menu_text(devices=callback_data.devices, days=callback_data.days)
+
+        keyboard = await build_subscription_menu(devices=callback_data.devices, days=callback_data.days)
         
         await message_service.update_or_send_menu(
             bot=callback.bot,
@@ -88,8 +89,8 @@ async def select_devices(callback: CallbackQuery, callback_data: SubscriptionCal
     telegram_id = callback.from_user.id
     
     try:
-        text = get_subscription_menu_text(devices=callback_data.devices, days=callback_data.days)
-        keyboard = build_subscription_menu(devices=callback_data.devices, days=callback_data.days)
+        text = await get_subscription_menu_text(devices=callback_data.devices, days=callback_data.days)
+        keyboard = await build_subscription_menu(devices=callback_data.devices, days=callback_data.days)
         
         await message_service.update_or_send_menu(
             bot=callback.bot,
@@ -115,7 +116,7 @@ async def proceed_to_payment(
     telegram_id = callback.from_user.id
     
     try:
-        price, _ = calculate_price(callback_data.devices, callback_data.days)
+        price, _, _ = await calculate_price(callback_data.devices, callback_data.days)
         
         balance_service = BalanceService()
         user_balance = await balance_service.get_balance(telegram_id)

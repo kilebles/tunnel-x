@@ -3,7 +3,14 @@ from sqladmin import Admin
 from app.db.session import engine
 from app.core.settings import config
 from app.admin.auth import AdminAuth
-from app.admin.views import UserAdmin, SubscriptionAdmin, WalletAdmin
+from app.admin.views import (
+    UserAdmin, 
+    SubscriptionAdmin, 
+    WalletAdmin,
+    DiscountAdmin,
+    PromoCodeAdmin,
+    BroadcastAdmin
+)
 
 
 def setup_admin(app):
@@ -22,5 +29,8 @@ def setup_admin(app):
     admin.add_view(UserAdmin)
     admin.add_view(SubscriptionAdmin)
     admin.add_view(WalletAdmin)
+    admin.add_view(DiscountAdmin)
+    admin.add_view(PromoCodeAdmin)
+    admin.add_view(BroadcastAdmin)
     
     return admin

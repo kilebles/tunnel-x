@@ -2,12 +2,14 @@ from aiogram.types import InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.bot.keyboards.callback_data import SubscriptionCallback, MainMenuCallback
+from app.db.session import AsyncSessionLocal
+from app.services.discount import DiscountService
 
 
-def calculate_price(devices: int, days: int) -> tuple[int, int]:
+async def calculate_price(devices: int, days: int) -> tuple[int, int, int]:
     """
-    Расчёт цены за подписку.
-    Возвращает (итоговая_цена, полная_цена_без_скидки).
+    Расчёт цены за подписку с учётом глобальной скидки.
+    Возвращает (итоговая_цена, полная_цена_без_скидки, процент_глобальной_скидки).
     """
     base_monthly = {
         1: 150,
@@ -21,26 +23,37 @@ def calculate_price(devices: int, days: int) -> tuple[int, int]:
     full_price = int(monthly * months)
     
     # Скидки за срок
-    discount = 1.0
+    period_discount = 1.0
     if days >= 90:
-        discount = 0.9   # -10%
+        period_discount = 0.9
     if days >= 180:
-        discount = 0.83  # -17%
+        period_discount = 0.83
     if days >= 360:
-        discount = 0.75  # -25%
+        period_discount = 0.75
     
-    final_price = int(monthly * months * discount)
+    price_after_period = int(monthly * months * period_discount)
     
-    return final_price, full_price
+    # Глобальная скидка
+    async with AsyncSessionLocal() as session:
+        discount_service = DiscountService(session)
+        global_discount_percent = await discount_service.get_active_global_discount()
+    
+    if global_discount_percent > 0:
+        global_discount_multiplier = 1 - (global_discount_percent / 100)
+        final_price = int(price_after_period * global_discount_multiplier)
+    else:
+        final_price = price_after_period
+    
+    return final_price, full_price, global_discount_percent
 
 
-def build_subscription_menu(devices: int = 2, days: int = 30) -> InlineKeyboardMarkup:
+async def build_subscription_menu(devices: int = 2, days: int = 30) -> InlineKeyboardMarkup:
     """Строит меню выбора тарифа с динамическими галочками."""
     builder = InlineKeyboardBuilder()
     
-    price, full_price = calculate_price(devices, days)
+    price, full_price, global_discount = await calculate_price(devices, days)
     
-    # Кнопка оплаты со скидкой если есть
+    # Кнопка оплаты со скидкой
     if price < full_price:
         discount_percent = int((1 - price / full_price) * 100)
         button_text = f"💳 Оплатить {price}₽ 🔥 -{discount_percent}%"
@@ -69,7 +82,7 @@ def build_subscription_menu(devices: int = 2, days: int = 30) -> InlineKeyboardM
         )
     
     builder.button(
-        text="◀️ Назад",
+        text="↩️ Назад",
         callback_data=MainMenuCallback(action='back').pack()
     )
     
@@ -78,9 +91,9 @@ def build_subscription_menu(devices: int = 2, days: int = 30) -> InlineKeyboardM
     return builder.as_markup()
 
 
-def get_subscription_menu_text(devices: int, days: int) -> str:
+async def get_subscription_menu_text(devices: int, days: int) -> str:
     """Генерирует текст для меню подписки."""
-    price, full_price = calculate_price(devices, days)
+    price, full_price, global_discount = await calculate_price(devices, days)
     
     if days == 30:
         period = "1 месяц"
@@ -95,9 +108,28 @@ def get_subscription_menu_text(devices: int, days: int) -> str:
     
     text = f"Выбрано: <b>{devices} устройств</b> на <b>{period}</b>\n"
     
-    # Показываем скидку в тексте если есть
     if price < full_price:
-        text += f"Цена: <s>{full_price}₽</s> <b>{price}₽</b>\n\n"
+        text += f"Цена: <s>{full_price}₽</s> <b>{price}₽</b>"
+        if global_discount > 0:
+            async with AsyncSessionLocal() as session:
+                from app.services.discount import DiscountService
+                discount_service = DiscountService(session)
+                
+                from sqlalchemy import select
+                from app.db.models import Discount
+                result = await session.execute(
+                    select(Discount.name)
+                    .where(Discount.is_active == True)
+                    .order_by(Discount.created_at.desc())
+                    .limit(1)
+                )
+                discount_name = result.scalar_one_or_none()
+                
+                if discount_name:
+                    text += f"<b>{discount_name}</b>"
+                else:
+                    text += f" скидка {global_discount}%"
+        text += "\n\n"
     else:
         text += f"Цена: <b>{price}₽</b>\n\n"
     
